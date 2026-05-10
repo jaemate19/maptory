@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive World Map - Country Info</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- World map GeoJSON data -->
+    <script src="https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson"></script>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>">
+</head>
+<body>
+    <div class="container">
+<header>
+    <div class="header-top">
+        <div class="header-brand">
+            <h1>Maptory 🌍</h1>
+            <p class="tagline">Every country has a story</p>
+        </div>
+
+        <div class="header-share">
+            <a href="https://www.facebook.com/sharer.php?u=" target="_blank" class="share-icon" title="Share on Facebook" id="shareFacebook">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9 3.44 9 6.31v1.15H6.17v4.31H9v12.73h5.5V11.77h3.81l.46-4.31z"/></svg>
+            </a>
+            <a href="https://x.com/intent/post?url=" target="_blank" class="share-icon" title="Share on X" id="shareTwitter">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <a href="mailto:?subject=Check out Maptory&body=" class="share-icon" title="Share via Email" id="shareEmail">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            </a>
+            <a href="#" class="share-icon" title="Copy Link" id="shareCopy" onclick="copyMaptoryLink(); return false;">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+            </a>
+        </div>
+
+        <div class="header-actions">
+            <p id="authBenefits" class="auth-benefits">
+                Track visits • Save goals
+            </p>
+            <button id="authButton" class="auth-button" onclick="openAuthModal()">
+                🔑 Login / Register
+            </button>
+        </div>
+    </div>
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search for a country...">
+        <button onclick="searchCountry()">Search</button>
+    </div>
+</header>
+
+        <div class="main-content">
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+
+            <div class="info-panel" id="infoPanel">
+                <div class="info-header">
+                    <h2>Country Information</h2>
+                    <button class="close-btn" onclick="closePanel()">×</button>
+                </div>
+                <div id="countryInfo">
+                    <p class="placeholder">Click on any country to see its details here!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <button class="close-btn" onclick="closeHistoryModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="historyContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal">
+        <div class="modal-dialog auth-dialog">
+            <div class="modal-header">
+                <h2 id="authTitle">Welcome to Maptory</h2>
+                <button class="close-btn" onclick="closeAuthModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Login Form -->
+                <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" required placeholder="your@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" required placeholder="Enter password">
+                    </div>
+                    <button type="submit" class="auth-btn">Login</button>
+                    <p class="auth-switch">
+                        Don't have an account? <a href="#" onclick="switchAuthForm('register')">Register</a>
+                    </p>
+                </form>
+
+                <!-- Register Form (hidden by default) -->
+                <form id="registerForm" class="auth-form" style="display: none;" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label for="regUsername">Username</label>
+                        <input type="text" id="regUsername" required placeholder="Choose a username" minlength="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail">Email</label>
+                        <input type="email" id="regEmail" required placeholder="your@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword">Password</label>
+                        <input type="password" id="regPassword" required placeholder="At least 6 characters" minlength="6">
+                    </div>
+                    <button type="submit" class="auth-btn">Create Account</button>
+                    <p class="auth-switch">
+                        Already have an account? <a href="#" onclick="switchAuthForm('login')">Login</a>
+                    </p>
+                </form>
+
+                <div id="authMessage" style="display: none; margin-top: 15px; padding: 10px; border-radius: 5px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Stats Modal -->
+    <div id="statsModal" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2>📊 Your Travel Stats</h2>
+                <button class="close-btn" onclick="closeStatsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="statsContent">
+                    <div style="text-align: center; padding: 40px;">
+                        <p>Loading your stats...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>
